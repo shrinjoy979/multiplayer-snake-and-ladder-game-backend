@@ -1,4 +1,3 @@
-// Backend (Node.js) - server.js
 const express = require("express");
 const cors = require("cors");
 const { Server } = require("socket.io");
@@ -22,46 +21,58 @@ const ladders = { 2: 38, 7: 14, 8: 31, 21: 42, 28: 84, 51: 67, 71: 91 };
 
 let games = {};
 
+/*{
+  "k5f3q9": {
+    players: ["socket12345"],
+    positions: {},
+    turn: 0
+  }
+}*/
+
 io.on("connection", (socket) => {
-  console.log("A user connected", socket.id);
+  console.log('A user connected', socket.id);
 
   socket.on("createGame", () => {
-    const gameId = Math.random().toString(36).substr(2, 6);
+    const gameId = Math.random().toString(36).substring(2, 8);
     games[gameId] = { players: [socket.id], positions: {}, turn: 0 };
     socket.join(gameId);
     socket.emit("gameCreated", { gameId });
   });
 
   socket.on("joinGame", (gameId) => {
-    if (games[gameId] && games[gameId].players.length < 2) {
+    if(games[gameId] && games[gameId].players.length < 2) {
       games[gameId].players.push(socket.id);
       games[gameId].positions[games[gameId].players[0]] = 1;
       games[gameId].positions[games[gameId].players[1]] = 1;
       socket.join(gameId);
-      io.to(gameId).emit("startGame", { players: games[gameId].players });
+      io.to(gameId).emit("startGame", {players: games[gameId].players});
     }
   });
 
-  socket.on("rollDice", ({ gameId, player }) => {
-    if (!games[gameId]) return;
+  socket.on("rollDice", ({gameId, player}) => {
+    if(!games[gameId]) return;
 
     let currentTurn = games[gameId].turn;
-    if (games[gameId].players[currentTurn] !== player) return;
+    if(games[gameId].players[currentTurn] !== player) return;
 
     const diceRoll = Math.floor(Math.random() * 6) + 1;
     let newPosition = games[gameId].positions[player] + diceRoll;
 
-    if (newPosition > boardSize) newPosition = games[gameId].positions[player];
-    else if (snakes[newPosition]) newPosition = snakes[newPosition];
-    else if (ladders[newPosition]) newPosition = ladders[newPosition];
+    if (newPosition > boardSize) {
+      newPosition = games[gameId].positions[player];
+    } else if (snakes[newPosition]) {
+      newPosition = snakes[newPosition];
+    } else if (ladders[newPosition]) {
+      newPosition = ladders[newPosition];
+    }
 
     games[gameId].positions[player] = newPosition;
-    games[gameId].turn = (games[gameId].turn + 1) % 2;
+    games[gameId].turn = (games[gameId].turn + 1) % games[gameId].players.length;
 
     io.to(gameId).emit("updateGame", {
       positions: games[gameId].positions,
       diceRoll,
-      currentTurn,
+      currentTurn: games[gameId].turn,
     });
   });
 
@@ -76,4 +87,6 @@ io.on("connection", (socket) => {
   });
 });
 
-server.listen(4000, () => console.log("Server running on port 4000"));
+server.listen(4000, () => {
+  console.log(`Server started at: 4000`);
+});
