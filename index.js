@@ -42,8 +42,8 @@ io.on("connection", (socket) => {
   socket.on("joinGame", (gameId) => {
     if(games[gameId] && games[gameId].players.length < 2) {
       games[gameId].players.push(socket.id);
-      games[gameId].positions[games[gameId].players[0]] = 1;
-      games[gameId].positions[games[gameId].players[1]] = 1;
+      games[gameId].positions[games[gameId].players[0]] = 0;
+      games[gameId].positions[games[gameId].players[1]] = 0;
       socket.join(gameId);
       io.to(gameId).emit("startGame", {players: games[gameId].players});
     }
