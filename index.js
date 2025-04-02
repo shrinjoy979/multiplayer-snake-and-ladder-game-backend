@@ -56,6 +56,7 @@ io.on("connection", (socket) => {
     if(games[gameId].players[currentTurn] !== player) return;
 
     const diceRoll = Math.floor(Math.random() * 6) + 1;
+    // const diceRoll = 100;
     let newPosition = games[gameId].positions[player] + diceRoll;
 
     if (newPosition > boardSize) {
@@ -67,6 +68,12 @@ io.on("connection", (socket) => {
     }
 
     games[gameId].positions[player] = newPosition;
+
+    if (newPosition === boardSize) {
+      io.to(gameId).emit("gameOver", { winner: player });
+      return;
+    }
+
     games[gameId].turn = (games[gameId].turn + 1) % games[gameId].players.length;
 
     io.to(gameId).emit("updateGame", {
