@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const { Server } = require("socket.io");
 const http = require("http");
+const pool = require("./db");
 
 const app = express();
 const server = http.createServer(app);
@@ -14,6 +15,22 @@ const io = new Server(server, {
 
 app.use(cors());
 app.use(express.json());
+
+app.post("/api/save-user", async (req, res) => {
+  const { id, name, email, profileImage } = req.body;
+
+  try {
+    await pool.query(
+      `INSERT INTO users (id, name, email, profile_image) VALUES ($1, $2, $3, $4)
+       ON CONFLICT (id) DO UPDATE SET name = $2, email = $3, profile_image = $4`,
+      [id, name, email, profileImage]
+    );
+    res.json({ message: "User saved successfully" });
+  } catch (error) {
+    console.error("Database error:", error);
+    res.status(500).json({ error: "Database error" });
+  }
+});
 
 const boardSize = 100;
 const snakes = { 98: 78, 95: 56, 93: 73, 87: 36, 64: 60, 49: 11, 26: 10 };
