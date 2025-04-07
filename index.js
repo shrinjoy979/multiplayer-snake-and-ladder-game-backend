@@ -66,7 +66,7 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("rollDice", ({gameId, player}) => {
+  socket.on("rollDice", ({gameId, player, username}) => {
     if(!games[gameId]) return;
 
     let currentTurn = games[gameId].turn;
@@ -87,7 +87,7 @@ io.on("connection", (socket) => {
     games[gameId].positions[player] = newPosition;
 
     if (newPosition === boardSize) {
-      io.to(gameId).emit("gameOver", { winner: player });
+      io.to(gameId).emit("gameOver", { winner: username });
       return;
     }
 
