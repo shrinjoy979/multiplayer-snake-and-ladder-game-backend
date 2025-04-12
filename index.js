@@ -20,7 +20,7 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 app.post("/api/save-user", async (req, res) => {
-  const { id, name, email, profileImage } = req.body;
+  const { id, name, email } = req.body;
 
   try {
     // await pool.query(
@@ -29,10 +29,10 @@ app.post("/api/save-user", async (req, res) => {
     //   [id, name, email, profileImage]
     // );
 
-    await prisma.user.upsert({
+    await prisma.users.upsert({
       where: { id },
-      update: { name, email, profileImage },
-      create: { id, name, email, profileImage },
+      update: { name, email },
+      create: { id, name, email },
     });
 
     res.json({ message: "User saved successfully" });
