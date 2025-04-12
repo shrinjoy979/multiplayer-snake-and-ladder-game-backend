@@ -16,15 +16,25 @@ const io = new Server(server, {
 app.use(cors());
 app.use(express.json());
 
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+
 app.post("/api/save-user", async (req, res) => {
-  const { id, name, email, profileImage } = req.body;
+  const { id, name, email } = req.body;
 
   try {
-    await pool.query(
-      `INSERT INTO users (id, name, email, profile_image) VALUES ($1, $2, $3, $4)
-       ON CONFLICT (id) DO UPDATE SET name = $2, email = $3, profile_image = $4`,
-      [id, name, email, profileImage]
-    );
+    // await pool.query(
+    //   `INSERT INTO users (id, name, email, profile_image) VALUES ($1, $2, $3, $4)
+    //    ON CONFLICT (id) DO UPDATE SET name = $2, email = $3, profile_image = $4`,
+    //   [id, name, email, profileImage]
+    // );
+
+    await prisma.users.upsert({
+      where: { id },
+      update: { name, email },
+      create: { id, name, email },
+    });
+
     res.json({ message: "User saved successfully" });
   } catch (error) {
     console.error("Database error:", error);
