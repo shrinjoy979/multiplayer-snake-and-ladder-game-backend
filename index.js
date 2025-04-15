@@ -23,12 +23,6 @@ app.post("/api/save-user", async (req, res) => {
   const { id, name, email } = req.body;
 
   try {
-    // await pool.query(
-    //   `INSERT INTO users (id, name, email, profile_image) VALUES ($1, $2, $3, $4)
-    //    ON CONFLICT (id) DO UPDATE SET name = $2, email = $3, profile_image = $4`,
-    //   [id, name, email, profileImage]
-    // );
-
     await prisma.users.upsert({
       where: { id },
       update: { name, email },
@@ -40,6 +34,46 @@ app.post("/api/save-user", async (req, res) => {
     console.error("Database error:", error);
     res.status(500).json({ error: "Database error" });
   }
+});
+
+app.post("/api/save-game-details", async (req, res) => {
+  const { creator_id, bet_amount, game_code, status } = req.body;
+
+  try {
+    await prisma.games.create({
+      data: {
+        creator_id,
+        bet_amount: BigInt(bet_amount),
+        game_code,
+        status,
+      },
+    });
+
+    res.status(201).json({ message: "Game details saved successfully" });
+  } catch (error) {
+    console.error("Database error:", error);
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
+app.get("/api/get-bet-amount", async (req, res) => {
+  const { gameId } = req.query;
+
+  const game = await prisma.games.findFirst({
+    where: {
+      game_code: gameId,
+    },
+  });
+
+  if (!game) {
+    return res.status(404).json({ message: 'No game found' });
+  }
+
+  let amount = Number(game.bet_amount) / 1_000_000_000;
+
+  res.json({
+    bet_amount: amount.toString(), // Convert BigInt for frontend
+  });
 });
 
 const boardSize = 100;
@@ -72,8 +106,11 @@ io.on("connection", (socket) => {
       games[gameId].positions[games[gameId].players[0]] = 0;
       games[gameId].positions[games[gameId].players[1]] = 0;
       socket.join(gameId);
-      io.to(gameId).emit("startGame", {players: games[gameId].players});
     }
+  });
+
+  socket.on("playerReady", (gameId) => {
+    io.to(gameId).emit("startGame", {players: games[gameId].players});
   });
 
   socket.on("rollDice", ({gameId, player, username}) => {
