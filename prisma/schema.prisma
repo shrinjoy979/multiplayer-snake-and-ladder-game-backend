@@ -12,4 +12,24 @@ model users {
   name          String
   email         String  @unique
   profile_image String?
+  createdAt     DateTime @default(now())
+  
+  createdGames   games[]  @relation("Creator")
+  gamesAsPlayer2 games[]  @relation("PlayerTwo")
+  gamesWon       games[]  @relation("WinnerUser")
+}
+
+model games {
+  id             String   @id @default(uuid())
+  bet_amount     BigInt
+  game_code      String
+  status         String   // "waiting", "in_progress", "finished"
+  creator_id     String
+  player_two_id  String?
+  winner_user_id String?
+  createdAt      DateTime @default(now())
+
+  creator     users @relation("Creator", fields: [creator_id], references: [id])
+  player_two  users? @relation("PlayerTwo", fields: [player_two_id], references: [id])
+  winner_user users? @relation("WinnerUser", fields: [winner_user_id], references: [id])
 }
