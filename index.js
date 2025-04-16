@@ -100,12 +100,28 @@ io.on("connection", (socket) => {
     socket.emit("gameCreated", { gameId });
   });
 
-  socket.on("joinGame", (gameId) => {
+  socket.on("joinGame", async (gameId, playerTwoId) => {
     if(games[gameId] && games[gameId].players.length < 2) {
       games[gameId].players.push(socket.id);
       games[gameId].positions[games[gameId].players[0]] = 0;
       games[gameId].positions[games[gameId].players[1]] = 0;
       socket.join(gameId);
+
+      try {
+        await prisma.games.update({
+          where: {
+            game_code: gameId,
+          },
+          data: {
+            player_two_id: playerTwoId,
+            status: 'in_progress',
+          },
+        });
+  
+        console.log(`Game ${gameId} updated in DB with player_two and status IN_PROGRESS`);
+      } catch (error) {
+        console.error(`Failed to update game ${gameId}:`, error);
+      }
     }
   });
 
