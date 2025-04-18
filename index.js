@@ -2,7 +2,6 @@ const express = require("express");
 const cors = require("cors");
 const { Server } = require("socket.io");
 const http = require("http");
-const pool = require("./db");
 
 const app = express();
 const server = http.createServer(app);
@@ -37,7 +36,7 @@ app.post("/api/save-user", async (req, res) => {
 });
 
 app.post("/api/save-game-details", async (req, res) => {
-  const { creator_id, bet_amount, game_code, status } = req.body;
+  const { creator_id, bet_amount, game_code, player_one_public_key, status } = req.body;
 
   try {
     await prisma.games.create({
@@ -45,6 +44,7 @@ app.post("/api/save-game-details", async (req, res) => {
         creator_id,
         bet_amount: BigInt(bet_amount),
         game_code,
+        player_one_public_key,
         status,
       },
     });
@@ -54,6 +54,48 @@ app.post("/api/save-game-details", async (req, res) => {
     console.error("Database error:", error);
     res.status(500).json({ error: "Database error" });
   }
+});
+
+app.get("/api/get-winner-details", async (req, res) => {
+  const { gameId, userId } = req.query;
+
+  const game = await prisma.games.findFirst({
+    where: {
+      AND: [
+        { game_code: gameId },
+        {
+          OR: [
+            { creator_id: userId },
+            { player_two_id: userId },
+          ],
+        },
+      ],
+    },
+  });
+
+  if (!game) {
+    return res.status(404).json({ message: 'No details found' });
+  }
+
+  // Assign the role
+  let role = "unknown";
+
+  if (game.creator_id === userId) {
+    role = "creator";
+  } else if (game.player_two_id === userId) {
+    role = "player_two";
+  }
+
+  // Do the calculation
+  const betAmount = game.bet_amount;
+  const doubled = betAmount * 2n;
+  const cut = doubled * 3n / 100n; // 3% cut
+  const wining_amount = doubled - cut;
+
+  res.json({
+    winner_public_key: role === 'creator' ? game.player_one_public_key :  game.player_two_public_key,
+    wining_amount: wining_amount.toString()
+  });
 });
 
 app.get("/api/get-bet-amount", async (req, res) => {
@@ -74,6 +116,26 @@ app.get("/api/get-bet-amount", async (req, res) => {
   res.json({
     bet_amount: amount.toString(), // Convert BigInt for frontend
   });
+});
+
+app.post("/api/update-player-two-public-key", async (req, res) => {
+  const { game_code, player_two_public_key } = req.body;
+
+  try {
+    await prisma.games.update({
+      where: {
+        game_code: game_code
+      },
+      data: {
+        player_two_public_key: player_two_public_key
+      }
+    });
+
+    res.status(200).json({ message: "Game details updated successfully" });
+  } catch(error) {
+    console.error("Database error:", error);
+    res.status(500).json({ error: "Database error" });
+  }
 });
 
 const boardSize = 100;
@@ -129,7 +191,7 @@ io.on("connection", (socket) => {
     io.to(gameId).emit("startGame", {players: games[gameId].players});
   });
 
-  socket.on("rollDice", ({gameId, player, username}) => {
+  socket.on("rollDice", async ({gameId, player, username, userId}) => {
     if(!games[gameId]) return;
 
     let currentTurn = games[gameId].turn;
@@ -150,7 +212,18 @@ io.on("connection", (socket) => {
     games[gameId].positions[player] = newPosition;
 
     if (newPosition === boardSize) {
-      io.to(gameId).emit("gameOver", { winner: username });
+      io.to(gameId).emit("gameOver", { winner: username, userId: userId });
+
+      await prisma.games.updateMany({
+        where: {
+          game_code: gameId,
+        },
+        data: {
+          winner_user_id: userId,
+          status: 'completed',
+        },
+      });
+
       return;
     }
 
