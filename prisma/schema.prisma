@@ -22,7 +22,7 @@ model users {
 model games {
   id             String   @id @default(uuid())
   bet_amount     BigInt
-  game_code      String
+  game_code      String   @unique
   status         String   // "waiting", "in_progress", "finished"
   creator_id     String
   player_two_id  String?
