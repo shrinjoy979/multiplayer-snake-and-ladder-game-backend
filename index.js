@@ -92,9 +92,10 @@ app.get("/api/get-winner-details", async (req, res) => {
   const cut = doubled * 3n / 100n; // 3% cut
   const wining_amount = doubled - cut;
 
-  res.json({
+  res.status(200).json({
     winner_public_key: role === 'creator' ? game.player_one_public_key :  game.player_two_public_key,
-    wining_amount: wining_amount.toString()
+    wining_amount: wining_amount.toString(),
+    bet_amount: betAmount.toString()
   });
 });
 
@@ -138,6 +139,47 @@ app.post("/api/update-player-two-public-key", async (req, res) => {
   }
 });
 
+app.post("/api/save-payment-details", async (req, res) => {
+  const { userId, user_public_key, amount, status, payment_signature, game_code } = req.body;
+
+  if (!userId || !amount || !status || !game_code) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  try {
+    await prisma.payments.create({
+      data: {
+        user_id: userId,
+        user_public_key,
+        amount: BigInt(amount),
+        status,
+        payment_signature,
+        game_code
+      }
+    });
+
+    res.status(200).json({ message: "Payment details updated successfully" });
+  } catch(error) {
+    console.error("Database error:", error);
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
+app.get("/api/all-recent-results", async (req, res) => {
+
+  try {
+    const payments = await prisma.payments.findMany();
+
+    res.json({
+      payments
+    });
+
+  } catch(error) {
+    console.error("Database error:", error);
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
 const boardSize = 100;
 const snakes = { 98: 78, 95: 56, 93: 73, 87: 36, 64: 60, 49: 11, 26: 10 };
 const ladders = { 2: 38, 7: 14, 8: 31, 21: 42, 28: 84, 51: 67, 71: 91 };
@@ -156,7 +198,7 @@ io.on("connection", (socket) => {
   console.log('A user connected', socket.id);
 
   socket.on("createGame", () => {
-    const gameId = Math.random().toString(36).substring(2, 8);
+    const gameId = Math.random().toString(36).substring(2, 14);
     games[gameId] = { players: [socket.id], positions: {}, turn: 0 };
     socket.join(gameId);
     socket.emit("gameCreated", { gameId });
