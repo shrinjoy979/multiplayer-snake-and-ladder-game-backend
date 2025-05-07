@@ -17,6 +17,8 @@ model users {
   createdGames   games[]  @relation("Creator")
   gamesAsPlayer2 games[]  @relation("PlayerTwo")
   gamesWon       games[]  @relation("WinnerUser")
+
+  payments        payments[] @relation("PaymentUser") // ← added this line
 }
 
 model games {
@@ -34,4 +36,17 @@ model games {
   creator     users @relation("Creator", fields: [creator_id], references: [id])
   player_two  users? @relation("PlayerTwo", fields: [player_two_id], references: [id])
   winner_user users? @relation("WinnerUser", fields: [winner_user_id], references: [id])
+}
+
+model payments {
+  id                      String   @id @default(uuid())
+  user_id                 String
+  user_public_key         String?
+  amount                  BigInt
+  status                  String // Win, Loss
+  payment_signature       String?
+  game_code               String
+  createdAt       DateTime @default(now())
+
+  user     users @relation("PaymentUser", fields: [user_id], references: [id])
 }
