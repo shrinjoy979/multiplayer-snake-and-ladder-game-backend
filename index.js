@@ -165,27 +165,6 @@ app.post("/api/save-payment-details", async (req, res) => {
   }
 });
 
-// function convertBigIntsToStringsAndConvertLamportsToSOL(obj) {
-//   if (Array.isArray(obj)) {
-//     return obj.map(convertBigIntsToStringsAndConvertLamportsToSOL);
-//   } else if (obj && typeof obj === 'object') {
-//     return Object.fromEntries(
-//       Object.entries(obj).map(([key, value]) => {
-//         if (typeof value === 'bigint') {
-//           if (key === 'amount') {
-//             return [key, Number(value) / 1_000_000_000];
-//           } else {
-//             return [key, value.toString()];
-//           }
-//         } else {
-//           return [key, convertBigIntsToStringsAndConvertLamportsToSOL(value)];
-//         }
-//       })
-//     );
-//   }
-//   return obj;
-// }
-
 app.get("/api/all-recent-results", async (req, res) => {
   try {
     const payments = await prisma.payments.findMany();
