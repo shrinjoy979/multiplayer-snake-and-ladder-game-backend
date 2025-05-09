@@ -166,15 +166,18 @@ app.post("/api/save-payment-details", async (req, res) => {
 });
 
 app.get("/api/all-recent-results", async (req, res) => {
-
   try {
     const payments = await prisma.payments.findMany();
 
-    res.json({
-      payments
+    const formattedPayments = payments.map(payment => {
+      return {
+        ...payment,
+        amount: payment.amount.toString(),
+      };
     });
 
-  } catch(error) {
+    res.status(200).json({ payments: formattedPayments });
+  } catch (error) {
     console.error("Database error:", error);
     res.status(500).json({ error: "Database error" });
   }
