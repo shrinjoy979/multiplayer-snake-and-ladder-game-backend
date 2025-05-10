@@ -167,7 +167,11 @@ app.post("/api/save-payment-details", async (req, res) => {
 
 app.get("/api/all-recent-results", async (req, res) => {
   try {
-    const payments = await prisma.payments.findMany();
+    const payments = await prisma.payments.findMany({
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
 
     const formattedPayments = payments.map(payment => {
       return {
