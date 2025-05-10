@@ -259,9 +259,16 @@ io.on("connection", (socket) => {
     }
 
     games[gameId].positions[player] = newPosition;
+    games[gameId].turn = (games[gameId].turn + 1) % games[gameId].players.length;
 
     if (newPosition === boardSize) {
-      io.to(gameId).emit("gameOver", { winner: username, userId: userId });
+      io.to(gameId).emit("gameOver", {
+        winner: username,
+        userId: userId,
+        diceRoll: diceRoll,
+        positions: games[gameId].positions,
+        currentTurn: games[gameId].turn,
+      });
 
       await prisma.games.updateMany({
         where: {
@@ -275,8 +282,6 @@ io.on("connection", (socket) => {
 
       return;
     }
-
-    games[gameId].turn = (games[gameId].turn + 1) % games[gameId].players.length;
 
     io.to(gameId).emit("updateGame", {
       positions: games[gameId].positions,
