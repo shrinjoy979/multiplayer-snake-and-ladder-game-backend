@@ -167,7 +167,11 @@ app.post("/api/save-payment-details", async (req, res) => {
 
 app.get("/api/all-recent-results", async (req, res) => {
   try {
-    const payments = await prisma.payments.findMany();
+    const payments = await prisma.payments.findMany({
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
 
     const formattedPayments = payments.map(payment => {
       return {
@@ -242,8 +246,8 @@ io.on("connection", (socket) => {
     let currentTurn = games[gameId].turn;
     if(games[gameId].players[currentTurn] !== player) return;
 
-    const diceRoll = Math.floor(Math.random() * 6) + 1;
-    // const diceRoll = 100;
+    // const diceRoll = Math.floor(Math.random() * 6) + 1;
+    const diceRoll = 100;
     let newPosition = games[gameId].positions[player] + diceRoll;
 
     if (newPosition > boardSize) {
