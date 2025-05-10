@@ -246,8 +246,8 @@ io.on("connection", (socket) => {
     let currentTurn = games[gameId].turn;
     if(games[gameId].players[currentTurn] !== player) return;
 
-    // const diceRoll = Math.floor(Math.random() * 6) + 1;
-    const diceRoll = 100;
+    const diceRoll = Math.floor(Math.random() * 6) + 1;
+    // const diceRoll = 100;
     let newPosition = games[gameId].positions[player] + diceRoll;
 
     if (newPosition > boardSize) {
