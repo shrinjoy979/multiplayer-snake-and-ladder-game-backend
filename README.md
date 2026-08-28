@@ -917,13 +917,6 @@ This project is intended for educational and experimental purposes.
 
 The repository currently uses the ISC license as specified in `package.json`.
 
----
-
-## Author
-
-**Shrinjoy Saha**
-
-GitHub: [@shrinjoy979](https://github.com/shrinjoy979)
 
 ---
 
